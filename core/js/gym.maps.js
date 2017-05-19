@@ -1,40 +1,31 @@
 /** global: google */
+/** global: navigator */
+/** global: InfoBox */
+
 function initMap()
 {
 	$('.gym_details').hide();
 	//ensure that gmaps is loaded before loading infobox (nasty but usefull trick)
-	$.getScript("//rawgit.com/googlemaps/v3-utility-library/master/infobox/src/infobox.js").done(function () {
+	$.getScript("//cdn.rawgit.com/googlemaps/v3-utility-library/master/infobox/src/infobox.js").done(function () {
 		$.ajax({
 			'async': true,
 			'type': "GET",
 			'global': false,
-			'dataType': 'text',
+			'dataType': 'json',
 			'url': "core/process/aru.php",
-			'data': { 'request': "", 'target': 'arrange_url', 'method': 'method_target', 'type' : 'gym_map' }}).done(function (data) {
+			'data': { 'request': "", 'target': 'arrange_url', 'method': 'method_target', 'type' : 'gym_map' }}).done(function (gyms) {
 			
 			
 			// Get website variables
 			
-				$.getJSON("core/json/variables.json", function ( jsondata ) {
-				
-					var variables = jsondata;
-												
-					var lattitude = Number(variables['system']['map_center_lat']);
+				$.getJSON("core/json/variables.json", function (variables) {
+					var latitude = Number(variables['system']['map_center_lat']);
 					var longitude = Number(variables['system']['map_center_long']);
 					var zoom_level = Number(variables['system']['zoom_level']);
 				
-					// Convert return to JSON Array
-				
-					var locations = JSON.parse(data);
-					var arr = [];
-				
-					for (i = 0; i < locations.length; i++) {
-						arr.push(JSON.parse(locations[i]));
-					}
-					
 					var map = new google.maps.Map(document.getElementById('map'), {
 						center: {
-							lat: lattitude,
+							lat: latitude,
 							lng: longitude
 						},
 						zoom: zoom_level,
@@ -63,7 +54,36 @@ function initMap()
 					$.getJSON( 'core/json/defaultstyle.json', function( data ) {
 						map.set('styles', data);
 					});
-					
+
+		$.ajax({
+			'async': true,
+			'type': "GET",
+			'global': false,
+			'dataType': 'json',
+			'url': "core/process/aru.php",
+			'data': {
+				'request': "",
+				'target': 'arrange_url',
+				'method': 'method_target',
+				'type': 'maps_localization_coordinates'
+			}
+		}).done(function(coordinates) {
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(function(position) {
+					var pos = {
+						lat: position.coords.latitude,
+						lng: position.coords.longitude
+					};
+
+					if (position.coords.latitude <= coordinates.max_latitude && position.coords.latitude >= coordinates.min_latitude) {
+						if (position.coords.longitude <= coordinates.max_longitude && position.coords.longitude >= coordinates.min_longitude) {
+							map.setCenter(pos);
+						}
+					}
+				});
+			}
+		});
+
 					var infowindow = new InfoBox({
 						content: document.getElementById("gym_details_template"),
 						disableAutoPan: false,
@@ -79,18 +99,16 @@ function initMap()
 				
 					var marker, i;
 			
-					for (i = 0; i < arr.length; i++) {
+					for (i = 0; i < gyms.length; i++) {
 						marker = new google.maps.Marker({
-							position: new google.maps.LatLng(arr[i][2], arr[i][3]),
+							position: new google.maps.LatLng(gyms[i][1], gyms[i][2]),
 							map: map,
-							icon: 'core/img/'+arr[i][1],
+							icon: 'core/img/'+gyms[i][0],
 						});
 					
 					
 						google.maps.event.addListener(marker, 'click', (function (marker, i) {
 							return function () {
-								infowindow.setContent(arr[i][0]);
-								infowindow.open(map, marker);
 								$.ajax({
 									'async': true,
 									'type': "GET",
@@ -102,11 +120,12 @@ function initMap()
 										'target': 'arrange_url',
 										'method': 'method_target',
 										'type' : 'gym_defenders',
-										'gym_id' : arr[i][5]
+										'gym_id' : gyms[i][3]
 									},
 									'success': function (data) {
 										setGymDetails(data);
 										infowindow.setContent($('#gym_details_template').html());
+										infowindow.open(map, marker);
 									}
 								});
 							}

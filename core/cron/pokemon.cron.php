@@ -10,13 +10,13 @@
 
 // Load the pokemons array
 // crontabs.include.php forces english lang
-include_once($filePath.'/../process/locales.loader.php');
+include_once(SYS_PATH.'/core/process/locales.loader.php');
 
 
 $pokemon_stats['timestamp'] = $timestamp;
 
 
-$req 		= "SELECT COUNT(*) as total FROM pokemon WHERE disappear_time >= UTC_TIMESTAMP()";
+$req 		= "SELECT COUNT(*) AS total FROM pokemon WHERE disappear_time >= UTC_TIMESTAMP()";
 $result 	= $mysqli->query($req);
 $data 		= $result->fetch_object();
 
@@ -42,9 +42,6 @@ isset($rarityarray['Mythic']) ?: $rarityarray['Mythic'] = 0;
 $pokemon_stats['rarity_spawn'] = $rarityarray;
 
 
-// Add the datas in file
-
+// Write to file
 $pokedatas[] 	= $pokemon_stats;
-$json 		= json_encode($pokedatas);
-
-file_put_contents($pokemonstats_file, $json);
+file_put_contents($pokemonstats_file, json_encode($pokedatas));

@@ -1,6 +1,7 @@
 /** global: google */
 /** global: pokemon_id */
 /** global: navigator */
+
 var map, heatmap;
 var pokemonMarkers = [];
 var updateLiveTimeout;
@@ -10,14 +11,14 @@ var ivMax = 100;
 
 function initMap() {
 	$.getJSON( "core/json/variables.json", function( variables ) {
-		var lattitude = Number(variables['system']['map_center_lat']);
+		var latitude = Number(variables['system']['map_center_lat']);
 		var longitude = Number(variables['system']['map_center_long']);
 		var zoom_level = Number(variables['system']['zoom_level']);
 		var pokeimg_suffix = variables['system']['pokeimg_suffix'];
 
 		map = new google.maps.Map(document.getElementById('map'), {
 			center: {
-				lat: lattitude,
+				lat: latitude,
 				lng: longitude
 			},
 			zoom: zoom_level,
@@ -46,9 +47,39 @@ function initMap() {
 		$.getJSON( 'core/json/defaultstyle.json', function( data ) {
 			map.set('styles', data);
 		});
+
+		$.ajax({
+			'async': true,
+			'type': "GET",
+			'global': false,
+			'dataType': 'json',
+			'url': "core/process/aru.php",
+			'data': {
+				'request': "",
+				'target': 'arrange_url',
+				'method': 'method_target',
+				'type': 'maps_localization_coordinates'
+			}
+		}).done(function(coordinates) {
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(function(position) {
+					var pos = {
+						lat: position.coords.latitude,
+						lng: position.coords.longitude
+					};
+
+					if (position.coords.latitude <= coordinates.max_latitude && position.coords.latitude >= coordinates.min_latitude) {
+						if (position.coords.longitude <= coordinates.max_longitude && position.coords.longitude >= coordinates.min_longitude) {
+							map.setCenter(pos);
+						}
+					}
+				});
+			}
+		});
 		
 		initHeatmap();
 		initSelector(pokeimg_suffix);
+		
 	});
 }
 
@@ -145,7 +176,7 @@ function initHeatmapData(bounds){
 		scales: [{
 			first: function(value) {
 				// 06. Oct 2016 (4th migration). 2 week schedule starts with this migration
-				var migrationStart = new Date("2016-10-06");
+				var migrationStart = new Date("2016-10-06T00:00:00Z");
 				var now = new Date();
 				var result = new Date();
 				for (var migration = migrationStart; migration <= now; migration.setTime(migration.getTime() + twoWeeks)) {
@@ -292,24 +323,31 @@ function addPokemonMarker(pokemon,pokeimg_suffix, locale) {
 		anchor: new google.maps.Point(16, 16),
 		labelOrigin : new google.maps.Point(16, 36)
 	};
-	var ivPercent = ((100/45)*(parseInt(pokemon.individual_attack)+parseInt(pokemon.individual_defense)+parseInt(pokemon.individual_stamina))).toFixed(2);
+	var encounter = false;
+	var ivPercent = 100;
+	if (pokemon.individual_attack !== null) {
+		encounter = true;
+		ivPercent = ((100/45)*(parseInt(pokemon.individual_attack)+parseInt(pokemon.individual_defense)+parseInt(pokemon.individual_stamina))).toFixed(2);
+	}
 	var marker = new google.maps.Marker({
 		position: {lat: parseFloat(pokemon.latitude), lng:parseFloat(pokemon.longitude)},
 		map: map,
 		icon: image,
-		label:{
-			color:getIvColor(ivPercent),
-			text:ivPercent+"%"
-		},
 		encounterId: pokemon.encounter_id,
 		ivPercent: ivPercent
 	});
-	var ivFormatted = ((100/45)*(parseInt(pokemon.individual_attack)+parseInt(pokemon.individual_defense)+parseInt(pokemon.individual_stamina))).toFixed(2);
+	if (encounter) {
+		marker.setLabel({
+			color:getIvColor(ivPercent),
+			text:ivPercent+"%"
+		});
+	}
 	var contentString = '<div>'+
-			'<h4> '+pokemon.name+' #'+pokemon.pokemon_id+' IV: '+ivFormatted+'% </h4>'+
+			'<h4> '+pokemon.name+' #'+pokemon.pokemon_id+ (encounter?' IV: '+ivPercent+'% ':'')+'</h4>'+
 			'<div id="bodyContent">'+
-				'<p class="disappear_time_display text-center">'+pokemon.disappear_time_real+'<span class="disappear_time_display_timeleft"></span></p>'+
-				
+				'<p class="disappear_time_display text-center">'+pokemon.disappear_time_real+'<span class="disappear_time_display_timeleft"></span></p>';
+	if (encounter) {
+		contentString +=
 				'<p></p>'+
 				'<div class="progress" style="height: 6px; width: 120px; margin-bottom: 10px; margin-top: 2px; margin-left: auto; margin-right: auto">'+
 					'<div title="'+locale.ivAttack+': '+pokemon.individual_attack+'" class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="'+pokemon.individual_attack+'" aria-valuemin="0" aria-valuemax="45" style="width: '+(((100/15)*pokemon.individual_attack)/3)+'%">'+
@@ -323,9 +361,9 @@ function addPokemonMarker(pokemon,pokeimg_suffix, locale) {
 					'</div>'+
 				'</div>'+
 				'<p class="text-center">('+pokemon.individual_attack+"/"+pokemon.individual_defense+"/"+pokemon.individual_stamina+')</p>'+
-				'<p class="text-center">'+pokemon.quick_move+"/"+pokemon.charge_move+'</p>'+
-			'</div>'+
-		'</div>';
+				'<p class="text-center">'+pokemon.quick_move+"/"+pokemon.charge_move+'</p>';
+		}
+		contentString +='</div>';
 
 	var infoWindow = new google.maps.InfoWindow({
 		content: contentString
@@ -412,11 +450,11 @@ function extractEncountersId(){
 }
 
 function isTouchDevice() {
-    // Should cover most browsers
-    return 'ontouchstart' in window || navigator.maxTouchPoints
+	// Should cover most browsers
+	return 'ontouchstart' in window || navigator.maxTouchPoints
 }
 
 function isMobileDevice() {
-    //  Basic mobile OS (not browser) detection
-    return (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+	// Basic mobile OS (not browser) detection
+	return (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
 }

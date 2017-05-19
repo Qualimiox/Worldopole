@@ -8,6 +8,8 @@
 $captcha_file	= SYS_PATH.'/core/json/captcha.stats.json';
 if (is_file($captcha_file)) {
 	$capdatas	= json_decode(file_get_contents($captcha_file), true);
+	// Trim json stats files to last 7 days of data
+	$capdatas = trim_stats_json($capdatas, $timestamp_lastweek);
 }
 
 
@@ -17,9 +19,10 @@ $config_secret = json_decode(file_get_contents($variables_secret));
 if ($config_secret->captcha_key=="") {
 	$captcha['timestamp'] = $timestamp;
 	// get amount of accounts requiring a captcha
-	$req = "SELECT COUNT(*) as total "
-			. "FROM workerstatus WHERE `captcha` > '0' "
-			. "AND last_modified >= UTC_TIMESTAMP() - INTERVAL 60 SECOND";
+	$req = "SELECT COUNT(*) AS total
+			FROM workerstatus
+			WHERE `captcha` > '0'
+			AND last_modified >= UTC_TIMESTAMP() - INTERVAL 60 SECOND";
 	$result 	= $mysqli->query($req);
 	$data 		= $result->fetch_object();
 	$captcha['captcha_accs'] = $data->total;
@@ -78,5 +81,6 @@ if ($config_secret->captcha_key=="") {
 		--$numberDays;
 	}
 }
-$json 		= json_encode($capdatas);
-file_put_contents($captcha_file, $json);
+
+// Write to file
+file_put_contents($captcha_file, json_encode($capdatas));

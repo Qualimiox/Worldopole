@@ -80,18 +80,6 @@ function percent($val, $val_total)
 	return $count;
 }
 
-########################################################################
-// File datetime
-// @param $file		=> string (mandatory)
-//
-// Return last_modified file format timestamp
-########################################################################
-
-function file_datetime($file)
-{
-	$time = filemtime($file);
-	return $time;
-}
 
 ########################################################################
 // File version (unix timestamp)
@@ -105,4 +93,80 @@ function auto_ver($url)
 	$path = pathinfo($url);
 	$ver = '.'.filemtime(SYS_PATH.'/'.$url).'.';
 	echo $path['dirname'].'/'.preg_replace('/\.(css|js)$/', $ver."$1", $path['basename']);
+}
+
+
+########################################################################
+// File age in secs
+// @param $filepath     => string (mandatory)
+//
+// Return file age of file in secs, PHP_INT_MAX if file doesn't exist
+########################################################################
+
+function file_update_ago($filepath)
+{
+	if (is_file($filepath)) {
+		$filemtime = filemtime($filepath);
+		$now = time();
+		$diff = $now - $filemtime;
+		return $diff;
+	}
+	// file doesn't exist yet!
+	return PHP_INT_MAX;
+}
+
+
+########################################################################
+// Only keep data after $timestamp in $array (compared to 'timestamp' key)
+// @param $array     => array (mandatory)
+// @param $timestamp => int (mandatory)
+//
+// Return trimmed array
+########################################################################
+
+function trim_stats_json($array, $timestamp)
+{
+	foreach ($array as $key => $value) {
+		if ($value['timestamp'] < $timestamp) {
+			unset($array[$key]);
+		}
+	}
+	return $array;
+}
+
+
+########################################################################
+// gym level from prestige value
+// @param $prestige => int (mandatory)
+//
+// Return gym level
+########################################################################
+
+function gym_level($prestige)
+{
+	if ($prestige == 0) {
+		$gym_level = 0;
+	} elseif ($prestige < 2000) {
+		$gym_level = 1;
+	} elseif ($prestige < 4000) {
+		$gym_level = 2;
+	} elseif ($prestige < 8000) {
+		$gym_level = 3;
+	} elseif ($prestige < 12000) {
+		$gym_level = 4;
+	} elseif ($prestige < 16000) {
+		$gym_level = 5;
+	} elseif ($prestige < 20000) {
+		$gym_level = 6;
+	} elseif ($prestige < 30000) {
+		$gym_level = 7;
+	} elseif ($prestige < 40000) {
+		$gym_level = 8;
+	} elseif ($prestige < 50000) {
+		$gym_level = 9;
+	} else {
+		$gym_level = 10;
+	}
+
+	return $gym_level;
 }
