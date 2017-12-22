@@ -10,8 +10,8 @@ include_once('../../config.php');
 // Include & load the variables
 // ############################
 
-$variables	= SYS_PATH.'/core/json/variables.json';
-$config		= json_decode(file_get_contents($variables));
+$variables = SYS_PATH.'/core/json/variables.json';
+$config = json_decode(file_get_contents($variables));
 
 
 // Include & load locales (because it's REALLY REALLY REALLY IMPORTANT TO HAVE A FULLY TRANSLATE DASHBOARD )
@@ -20,19 +20,24 @@ $config		= json_decode(file_get_contents($variables));
 include_once(SYS_PATH.'/core/process/locales.loader.php');
 
 
-
 // Check if there's a pokemon stat file
 // ####################################
 
-$stats_file	= SYS_PATH.'/core/json/pokemon.stats.json';
-$stats		= json_decode(file_get_contents($stats_file));
+$stats_file = SYS_PATH.'/core/json/pokemon.stats.json';
+$stats = json_decode(file_get_contents($stats_file));
 
 
-$now		= time();
-$yesterday	= $now-86400;
-$lastweek	= $now-604800;
+// Manage Time Interval
+// #####################
 
-$i=0;
+include_once('../process/timezone.loader.php');
+
+
+$now = time();
+$yesterday = $now - 86400;
+$lastweek = $now - 604800;
+
+$i = 0;
 $labels_global = array();
 $total = array();
 $labels = array();
@@ -59,12 +64,12 @@ $captcha_accs = array();
 
 foreach ($stats as $data) {
 	if ($data->timestamp > $lastweek) {
-		$labels_global[]	= '"'.date('D H:i', $data->timestamp).'"';
-		$total[]		= $data->pokemon_now;
+		$labels_global[] = '"'.date('D H:i', $data->timestamp).'"';
+		$total[] = $data->pokemon_now;
 	}
 
 	if ($data->timestamp > $yesterday) {
-		$labels[] = '"'.date('H:i', $data->timestamp ).'"';
+		$labels[] = '"'.date('H:i', $data->timestamp).'"';
 
 		if (isset($data->rarity_spawn->{'Very common'})) {
 			$veco[]		= $data->rarity_spawn->{'Very common'};
@@ -93,47 +98,47 @@ foreach ($stats as $data) {
 }
 
 
-$stats_file	= SYS_PATH.'/core/json/gym.stats.json';
-$stats		= json_decode(file_get_contents($stats_file));
+$stats_file = SYS_PATH.'/core/json/gym.stats.json';
+$stats = json_decode(file_get_contents($stats_file));
 
 
 foreach ($stats as $data) {
 	if ($data->timestamp > $lastweek) {
-		$labels_gym[]			= '"'.date('D H:i', $data->timestamp).'"';
+		$labels_gym[] = '"'.date('D H:i', $data->timestamp).'"';
 
-		$mystic_average[]		= $data->team->mystic->average;
+		$mystic_average[] = $data->team->mystic->average;
 		$mystic_owned[]			= $data->team->mystic->gym_owned;
 
 		$valor_average[]		= $data->team->valor->average;
-		$valor_owned[]			= $data->team->valor->gym_owned;
+		$valor_owned[] = $data->team->valor->gym_owned;
 
-		$instinct_average[]		= $data->team->instinct->average;
-		$instinct_owned[]		= $data->team->instinct->gym_owned;
+		$instinct_average[] = $data->team->instinct->average;
+		$instinct_owned[] = $data->team->instinct->gym_owned;
 	}
 }
 
 
-$stats_file	= SYS_PATH.'/core/json/pokestop.stats.json';
-$stats		= json_decode(file_get_contents($stats_file));
+$stats_file = SYS_PATH.'/core/json/pokestop.stats.json';
+$stats = json_decode(file_get_contents($stats_file));
 
 
 foreach ($stats as $data) {
 	if ($data->timestamp > $lastweek) {
-		$labels_stops[]			= '"'.date('D H:i', $data->timestamp).'"';
-		$lure[]				= $data->lured;
+		$labels_stops[] = '"'.date('D H:i', $data->timestamp).'"';
+		$lure[] = $data->lured;
 	}
 }
 
 
 if ($config->system->captcha_support) {
-	$stats_file	= SYS_PATH.'/core/json/captcha.stats.json';
-	$stats		= json_decode(file_get_contents($stats_file));
+	$stats_file = SYS_PATH.'/core/json/captcha.stats.json';
+	$stats = json_decode(file_get_contents($stats_file));
 
 
 	foreach ($stats as $data) {
 		if ($data->timestamp > $lastweek) {
-			$labels_captcha[]		= '"'.date('D H:i', $data->timestamp).'"';
-			$captcha_accs[]			= $data->captcha_accs;
+			$labels_captcha[] = '"'.date('D H:i', $data->timestamp).'"';
+			$captcha_accs[] = $data->captcha_accs;
 		}
 	}
 }
@@ -150,13 +155,13 @@ var options = {
 	scales: {
 		yAxes: [{
 			ticks: {
-				beginAtZero: true	// minimum value will be 0.
+				beginAtZero: true // minimum value will be 0.
 			}
 		}],
 		xAxes: [{
 			ticks: {
 				autoSkipPadding: 10,
-				fontFamily: "monospace"
+				fontFamily: 'monospace'
 			}
 		}]
 	},
@@ -168,40 +173,38 @@ var options = {
 // Total Spawn Graph
 // -----------------
 
-var ctx = $("#total_spawn");
+var ctx = $('#total_spawn');
 
 var data = {
 	labels: [<?= implode(',', $labels_global) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->DASHBOARD_SPAWN_TOTAL ?>",
-			fill: true,
-			lineTension: 0.1,
-			backgroundColor: "rgba(75,192,192,0.4)",
-			borderColor: "rgba(75,192,192,1)",
-			borderCapStyle: 'butt',
-			borderDash: [],
-			borderDashOffset: 0.0,
-			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(75,192,192,1)",
-			pointBackgroundColor: "#fff",
-			pointBorderWidth: 1,
-			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(75,192,192,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
-			pointHoverBorderWidth: 2,
-			pointRadius: 0,
-			pointHitRadius: 10,
-			data: [<?= implode(',', $total)?>],
-			spanGaps: false,
-		}
-	]
+	datasets: [{
+		label: '<?= $locales->DASHBOARD_SPAWN_TOTAL ?>',
+		fill: true,
+		lineTension: 0.1,
+		backgroundColor: 'rgba(75,192,192,0.4)',
+		borderColor: 'rgba(75,192,192,1)',
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		pointBorderColor: 'rgba(75,192,192,1)',
+		pointBackgroundColor: '#fff',
+		pointBorderWidth: 1,
+		pointHoverRadius: 5,
+		pointHoverBackgroundColor: 'rgba(75,192,192,1)',
+		pointHoverBorderColor: 'rgba(0,0,0,1)',
+		pointHoverBorderWidth: 2,
+		pointRadius: 0,
+		pointHitRadius: 10,
+		data: [<?= implode(',', $total)?>],
+		spanGaps: false,
+	}]
 };
 
 var myLineChart = new Chart(ctx, {
 	type: 'line',
 	data: data,
-	options : options
+	options: options
 });
 
 
@@ -209,155 +212,147 @@ var myLineChart = new Chart(ctx, {
 // --------------------
 
 
-var ctx_vc = $("#very_common");
+var ctx_vc = $('#very_common');
 
 var data_vc = {
 	labels: [<?= implode(',', $labels) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->VERYCOMMON ?>",
-			fill: false,
-			lineTension: 0.1,
-			backgroundColor: "rgba(175,192,192,0.4)",
-			borderColor: "rgba(175,192,192,1)",
-			borderCapStyle: 'butt',
-			borderDash: [],
-			borderDashOffset: 0.0,
-			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(175,192,192,1)",
-			pointBackgroundColor: "#fff",
-			pointBorderWidth: 1,
-			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(175,192,192,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
-			pointHoverBorderWidth: 2,
-			pointRadius: 0,
-			pointHitRadius: 10,
-			data: [<?= implode(',', $veco)?>],
-			spanGaps: false,
-		}
-	]
+	datasets: [{
+		label: '<?= $locales->VERYCOMMON ?>',
+		fill: false,
+		lineTension: 0.1,
+		backgroundColor: 'rgba(175,192,192,0.4)',
+		borderColor: 'rgba(175,192,192,1)',
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		pointBorderColor: 'rgba(175,192,192,1)',
+		pointBackgroundColor: '#fff',
+		pointBorderWidth: 1,
+		pointHoverRadius: 5,
+		pointHoverBackgroundColor: 'rgba(175,192,192,1)',
+		pointHoverBorderColor: 'rgba(0,0,0,1)',
+		pointHoverBorderWidth: 2,
+		pointRadius: 0,
+		pointHitRadius: 10,
+		data: [<?= implode(',', $veco)?>],
+		spanGaps: false,
+	}]
 };
 
 
 var myLineChart = new Chart(ctx_vc, {
 	type: 'line',
 	data: data_vc,
-	options : options
+	options: options
 });
 
 
-var ctx_comm = $("#common");
+var ctx_comm = $('#common');
 
 var data_comm = {
 	labels: [<?= implode(',', $labels) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->COMMON ?>",
-			fill: false,
-			lineTension: 0.1,
-			backgroundColor: "rgba(175,192,192,0.4)",
-			borderColor: "rgba(175,192,192,1)",
-			borderCapStyle: 'butt',
-			borderDash: [],
-			borderDashOffset: 0.0,
-			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(175,192,192,1)",
-			pointBackgroundColor: "#fff",
-			pointBorderWidth: 1,
-			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(175,192,192,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
-			pointHoverBorderWidth: 2,
-			pointRadius: 0,
-			pointHitRadius: 10,
-			data: [<?= implode(',', $commo)?>],
-			spanGaps: false,
-		}
-	]
+	datasets: [{
+		label: '<?= $locales->COMMON ?>',
+		fill: false,
+		lineTension: 0.1,
+		backgroundColor: 'rgba(175,192,192,0.4)',
+		borderColor: 'rgba(175,192,192,1)',
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		pointBorderColor: 'rgba(175,192,192,1)',
+		pointBackgroundColor: '#fff',
+		pointBorderWidth: 1,
+		pointHoverRadius: 5,
+		pointHoverBackgroundColor: 'rgba(175,192,192,1)',
+		pointHoverBorderColor: 'rgba(0,0,0,1)',
+		pointHoverBorderWidth: 2,
+		pointRadius: 0,
+		pointHitRadius: 10,
+		data: [<?= implode(',', $commo)?>],
+		spanGaps: false,
+	}]
 };
 
 
 var myLineChart = new Chart(ctx_comm, {
 	type: 'line',
 	data: data_comm,
-	options : options
+	options: options
 });
 
-var ctx_rare = $("#rare");
+var ctx_rare = $('#rare');
 
 var data_rare = {
 	labels: [<?= implode(',', $labels) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->RARE ?>",
-			fill: false,
-			lineTension: 0.1,
-			backgroundColor: "rgba(175,192,192,0.4)",
-			borderColor: "rgba(175,192,192,1)",
-			borderCapStyle: 'butt',
-			borderDash: [],
-			borderDashOffset: 0.0,
-			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(175,192,192,1)",
-			pointBackgroundColor: "#fff",
-			pointBorderWidth: 1,
-			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(175,192,192,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
-			pointHoverBorderWidth: 2,
-			pointRadius: 0,
-			pointHitRadius: 10,
-			data: [<?= implode(',', $rare)?>],
-			spanGaps: false,
-		}
-	]
+	datasets: [{
+		label: '<?= $locales->RARE ?>',
+		fill: false,
+		lineTension: 0.1,
+		backgroundColor: 'rgba(175,192,192,0.4)',
+		borderColor: 'rgba(175,192,192,1)',
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		pointBorderColor: 'rgba(175,192,192,1)',
+		pointBackgroundColor: '#fff',
+		pointBorderWidth: 1,
+		pointHoverRadius: 5,
+		pointHoverBackgroundColor: 'rgba(175,192,192,1)',
+		pointHoverBorderColor: 'rgba(0,0,0,1)',
+		pointHoverBorderWidth: 2,
+		pointRadius: 0,
+		pointHitRadius: 10,
+		data: [<?= implode(',', $rare)?>],
+		spanGaps: false,
+	}]
 };
 
 
 var myLineChart = new Chart(ctx_rare, {
 	type: 'line',
 	data: data_rare,
-	options : options
+	options: options
 });
 
 
 
-var ctx_myth = $("#mythics");
+var ctx_myth = $('#mythics');
 
 var data_myth = {
 	labels: [<?= implode(',', $labels) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->MYTHIC ?>",
-			fill: false,
-			lineTension: 0.1,
-			backgroundColor: "rgba(175,192,192,0.4)",
-			borderColor: "rgba(175,192,192,1)",
-			borderCapStyle: 'butt',
-			borderDash: [],
-			borderDashOffset: 0.0,
-			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(175,192,192,1)",
-			pointBackgroundColor: "#fff",
-			pointBorderWidth: 1,
-			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(175,192,192,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
-			pointHoverBorderWidth: 2,
-			pointRadius: 0,
-			pointHitRadius: 10,
-			data: [<?= implode(',', $myth)?>],
-			spanGaps: false,
-		}
-	]
+	datasets: [{
+		label: '<?= $locales->MYTHIC ?>',
+		fill: false,
+		lineTension: 0.1,
+		backgroundColor: 'rgba(175,192,192,0.4)',
+		borderColor: 'rgba(175,192,192,1)',
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		pointBorderColor: 'rgba(175,192,192,1)',
+		pointBackgroundColor: '#fff',
+		pointBorderWidth: 1,
+		pointHoverRadius: 5,
+		pointHoverBackgroundColor: 'rgba(175,192,192,1)',
+		pointHoverBorderColor: 'rgba(0,0,0,1)',
+		pointHoverBorderWidth: 2,
+		pointRadius: 0,
+		pointHitRadius: 10,
+		data: [<?= implode(',', $myth)?>],
+		spanGaps: false,
+	}]
 };
 
 
 var myLineChart = new Chart(ctx_myth, {
 	type: 'line',
 	data: data_myth,
-	options : options
+	options: options
 });
 
 
@@ -365,27 +360,26 @@ var myLineChart = new Chart(ctx_myth, {
 // ---------------------
 
 
-var team_av = $("#team_av");
+var team_av = $('#team_av');
 
 var data_av = {
 	labels: [<?= implode(',', $labels_gym) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->DASHBOARD_GRAPH_MYSTIC_PRESTIGE_AVERAGE ?>",
+	datasets: [{
+			label: '<?= $locales->DASHBOARD_GRAPH_MYSTIC_PRESTIGE_AVERAGE ?>',
 			fill: false,
 			lineTension: 0.1,
-			backgroundColor: "rgba(59,129,255,0.4)",
-			borderColor: "rgba(59,129,255,1)",
+			backgroundColor: 'rgba(59,129,255,0.4)',
+			borderColor: 'rgba(59,129,255,1)',
 			borderCapStyle: 'butt',
 			borderDash: [],
 			borderDashOffset: 0.0,
 			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(59,129,255,1)",
-			pointBackgroundColor: "#fff",
+			pointBorderColor: 'rgba(59,129,255,1)',
+			pointBackgroundColor: '#fff',
 			pointBorderWidth: 1,
 			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(59,129,255,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
+			pointHoverBackgroundColor: 'rgba(59,129,255,1)',
+			pointHoverBorderColor: 'rgba(0,0,0,1)',
 			pointHoverBorderWidth: 2,
 			pointRadius: 0,
 			pointHitRadius: 10,
@@ -393,21 +387,21 @@ var data_av = {
 			spanGaps: false,
 		},
 		{
-			label: "<?= $locales->DASHBOARD_GRAPH_VALOR_PRESTIGE_AVERAGE ?>",
+			label: '<?= $locales->DASHBOARD_GRAPH_VALOR_PRESTIGE_AVERAGE ?>',
 			fill: false,
 			lineTension: 0.1,
-			backgroundColor: "rgba(247,10,20,0.4)",
-			borderColor: "rgba(247,10,20,1)",
+			backgroundColor: 'rgba(247,10,20,0.4)',
+			borderColor: 'rgba(247,10,20,1)',
 			borderCapStyle: 'butt',
 			borderDash: [],
 			borderDashOffset: 0.0,
 			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(247,10,20,1)",
-			pointBackgroundColor: "#fff",
+			pointBorderColor: 'rgba(247,10,20,1)',
+			pointBackgroundColor: '#fff',
 			pointBorderWidth: 1,
 			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(247,10,20,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
+			pointHoverBackgroundColor: 'rgba(247,10,20,1)',
+			pointHoverBorderColor: 'rgba(0,0,0,1)',
 			pointHoverBorderWidth: 2,
 			pointRadius: 0,
 			pointHitRadius: 10,
@@ -415,21 +409,21 @@ var data_av = {
 			spanGaps: false,
 		},
 		{
-			label: "<?= $locales->DASHBOARD_GRAPH_INSTINCT_PRESTIGE_AVERAGE ?>",
+			label: '<?= $locales->DASHBOARD_GRAPH_INSTINCT_PRESTIGE_AVERAGE ?>',
 			fill: false,
 			lineTension: 0.1,
-			backgroundColor: "rgba(248,153,0,0.4)",
-			borderColor: "rgba(248,153,0,1)",
+			backgroundColor: 'rgba(248,153,0,0.4)',
+			borderColor: 'rgba(248,153,0,1)',
 			borderCapStyle: 'butt',
 			borderDash: [],
 			borderDashOffset: 0.0,
 			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(248,153,0,1)",
-			pointBackgroundColor: "#fff",
+			pointBorderColor: 'rgba(248,153,0,1)',
+			pointBackgroundColor: '#fff',
 			pointBorderWidth: 1,
 			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(248,153,0,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
+			pointHoverBackgroundColor: 'rgba(248,153,0,1)',
+			pointHoverBorderColor: 'rgba(0,0,0,1)',
 			pointHoverBorderWidth: 2,
 			pointRadius: 0,
 			pointHitRadius: 10,
@@ -443,7 +437,7 @@ var data_av = {
 var myLineChart = new Chart(team_av, {
 	type: 'line',
 	data: data_av,
-	options : options
+	options: options
 });
 
 
@@ -452,28 +446,26 @@ var myLineChart = new Chart(team_av, {
 // ----------------
 
 
-
-var team_gym = $("#team_gym");
+var team_gym = $('#team_gym');
 
 var data_team_gym = {
 	labels: [<?= implode(',', $labels_gym) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->DASHBOARD_GRAPH_MYSTIC_GYM_OWNED ?>",
+	datasets: [{
+			label: '<?= $locales->DASHBOARD_GRAPH_MYSTIC_GYM_OWNED ?>',
 			fill: false,
 			lineTension: 0.1,
-			backgroundColor: "rgba(59,129,255,0.4)",
-			borderColor: "rgba(59,129,255,1)",
+			backgroundColor: 'rgba(59,129,255,0.4)',
+			borderColor: 'rgba(59,129,255,1)',
 			borderCapStyle: 'butt',
 			borderDash: [],
 			borderDashOffset: 0.0,
 			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(59,129,255,1)",
-			pointBackgroundColor: "#fff",
+			pointBorderColor: 'rgba(59,129,255,1)',
+			pointBackgroundColor: '#fff',
 			pointBorderWidth: 1,
 			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(59,129,255,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
+			pointHoverBackgroundColor: 'rgba(59,129,255,1)',
+			pointHoverBorderColor: 'rgba(0,0,0,1)',
 			pointHoverBorderWidth: 2,
 			pointRadius: 0,
 			pointHitRadius: 10,
@@ -481,21 +473,21 @@ var data_team_gym = {
 			spanGaps: false,
 		},
 		{
-			label: "<?= $locales->DASHBOARD_GRAPH_VALOR_GYM_OWNED ?>",
+			label: '<?= $locales->DASHBOARD_GRAPH_VALOR_GYM_OWNED ?>',
 			fill: false,
 			lineTension: 0.1,
-			backgroundColor: "rgba(247,10,20,0.4)",
-			borderColor: "rgba(247,10,20,1)",
+			backgroundColor: 'rgba(247,10,20,0.4)',
+			borderColor: 'rgba(247,10,20,1)',
 			borderCapStyle: 'butt',
 			borderDash: [],
 			borderDashOffset: 0.0,
 			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(247,10,20,1)",
-			pointBackgroundColor: "#fff",
+			pointBorderColor: 'rgba(247,10,20,1)',
+			pointBackgroundColor: '#fff',
 			pointBorderWidth: 1,
 			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(247,10,20,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
+			pointHoverBackgroundColor: 'rgba(247,10,20,1)',
+			pointHoverBorderColor: 'rgba(0,0,0,1)',
 			pointHoverBorderWidth: 2,
 			pointRadius: 0,
 			pointHitRadius: 10,
@@ -503,21 +495,21 @@ var data_team_gym = {
 			spanGaps: false,
 		},
 		{
-			label: "<?= $locales->DASHBOARD_GRAPH_INSTINCT_GYM_OWNED ?>",
+			label: '<?= $locales->DASHBOARD_GRAPH_INSTINCT_GYM_OWNED ?>',
 			fill: false,
 			lineTension: 0.1,
-			backgroundColor: "rgba(248,153,0,0.4)",
-			borderColor: "rgba(248,153,0,1)",
+			backgroundColor: 'rgba(248,153,0,0.4)',
+			borderColor: 'rgba(248,153,0,1)',
 			borderCapStyle: 'butt',
 			borderDash: [],
 			borderDashOffset: 0.0,
 			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(248,153,0,1)",
-			pointBackgroundColor: "#fff",
+			pointBorderColor: 'rgba(248,153,0,1)',
+			pointBackgroundColor: '#fff',
 			pointBorderWidth: 1,
 			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(248,153,0,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
+			pointHoverBackgroundColor: 'rgba(248,153,0,1)',
+			pointHoverBorderColor: 'rgba(0,0,0,1)',
 			pointHoverBorderWidth: 2,
 			pointRadius: 0,
 			pointHitRadius: 10,
@@ -530,7 +522,7 @@ var data_team_gym = {
 var myLineChart = new Chart(team_gym, {
 	type: 'line',
 	data: data_team_gym,
-	options : options
+	options: options
 });
 
 
@@ -542,41 +534,39 @@ var myLineChart = new Chart(team_gym, {
 
 
 
-var ctx_lure = $("#lures");
+var ctx_lure = $('#lures');
 
 var data_lure = {
 	labels: [<?= implode(',', $labels_stops) ?>],
-	datasets: [
-		{
-			label: "<?= $locales->DASHBOARD_GRAPH_LURED_POKESTOPS ?>",
-			fill: true,
-			lineTension: 0.1,
-			backgroundColor: "rgba(124,0,210,0.4)",
-			borderColor: "rgba(124,0,210,1)",
-			borderCapStyle: 'butt',
-			borderDash: [],
-			borderDashOffset: 0.0,
-			borderJoinStyle: 'miter',
-			pointBorderColor: "rgba(124,0,210,1)",
-			pointBackgroundColor: "#fff",
-			pointBorderWidth: 1,
-			pointHoverRadius: 5,
-			pointHoverBackgroundColor: "rgba(124,0,210,1)",
-			pointHoverBorderColor: "rgba(0,0,0,1)",
-			pointHoverBorderWidth: 2,
-			pointRadius: 0,
-			pointHitRadius: 10,
-			data: [<?= implode(',', $lure)?>],
-			spanGaps: false,
-		}
-	]
+	datasets: [{
+		label: '<?= $locales->DASHBOARD_GRAPH_LURED_POKESTOPS ?>',
+		fill: true,
+		lineTension: 0.1,
+		backgroundColor: 'rgba(124,0,210,0.4)',
+		borderColor: 'rgba(124,0,210,1)',
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		pointBorderColor: 'rgba(124,0,210,1)',
+		pointBackgroundColor: '#fff',
+		pointBorderWidth: 1,
+		pointHoverRadius: 5,
+		pointHoverBackgroundColor: 'rgba(124,0,210,1)',
+		pointHoverBorderColor: 'rgba(0,0,0,1)',
+		pointHoverBorderWidth: 2,
+		pointRadius: 0,
+		pointHitRadius: 10,
+		data: [<?= implode(',', $lure)?>],
+		spanGaps: false,
+	}]
 };
 
 
 var myLineChart = new Chart(ctx_lure, {
 	type: 'line',
 	data: data_lure,
-	options : options
+	options: options
 });
 
 
@@ -584,40 +574,38 @@ var myLineChart = new Chart(ctx_lure, {
 // -------------
 
 <?php if ($config->system->captcha_support) { ?>
-	var ctx_captcha_accs = $("#captcha");
+var ctx_captcha_accs = $('#captcha');
 
-	var data_captcha_accs = {
-		labels: [<?= implode(',', $labels_captcha) ?>],
-		datasets: [
-			{
-				label: "<?= $locales->DASHBOARD_CAPTCHA ?>",
-				fill: true,
-				lineTension: 0.1,
-				backgroundColor: "rgba(255,183,0,0.4)",
-				borderColor: "rgba(255,183,0,1)",
-				borderCapStyle: 'butt',
-				borderDash: [],
-				borderDashOffset: 0.0,
-				borderJoinStyle: 'miter',
-				pointBorderColor: "rgba(255,183,0,1)",
-				pointBackgroundColor: "#fff",
-				pointBorderWidth: 1,
-				pointHoverRadius: 5,
-				pointHoverBackgroundColor: "rgba(255,183,0,1)",
-				pointHoverBorderColor: "rgba(0,0,0,1)",
-				pointHoverBorderWidth: 2,
-				pointRadius: 0,
-				pointHitRadius: 10,
-				data: [<?= implode(',', $captcha_accs)?>],
-				spanGaps: false,
-			}
-		]
-	};
+var data_captcha_accs = {
+	labels: [<?= implode(',', $labels_captcha) ?>],
+	datasets: [{
+		label: '<?= $locales->DASHBOARD_CAPTCHA ?>',
+		fill: true,
+		lineTension: 0.1,
+		backgroundColor: 'rgba(255,183,0,0.4)',
+		borderColor: 'rgba(255,183,0,1)',
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		pointBorderColor: 'rgba(255,183,0,1)',
+		pointBackgroundColor: '#fff',
+		pointBorderWidth: 1,
+		pointHoverRadius: 5,
+		pointHoverBackgroundColor: 'rgba(255,183,0,1)',
+		pointHoverBorderColor: 'rgba(0,0,0,1)',
+		pointHoverBorderWidth: 2,
+		pointRadius: 0,
+		pointHitRadius: 10,
+		data: [<?= implode(',', $captcha_accs)?>],
+		spanGaps: false,
+	}]
+};
 
 
-	var myLineChart = new Chart(ctx_captcha_accs, {
-		type: 'line',
-		data: data_captcha_accs,
-		options : options
-	});
+var myLineChart = new Chart(ctx_captcha_accs, {
+	type: 'line',
+	data: data_captcha_accs,
+	options: options
+});
 <?php } ?>
